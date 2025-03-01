@@ -17,21 +17,27 @@ package org.traccar.database;
 
 import org.traccar.config.Config;
 import org.traccar.config.Keys;
-import org.traccar.api.resource.SessionResource;
 import org.traccar.api.security.LoginService;
 import org.traccar.model.User;
 import org.traccar.storage.StorageException;
-import org.traccar.helper.LogAction;
-import org.traccar.helper.ServletHelper;
+import org.traccar.helper.SessionHelper;
+import org.traccar.helper.WebHelper;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.security.GeneralSecurityException;
+import java.util.List;
+import java.util.Map;
 import java.io.IOException;
-import javax.servlet.http.HttpServletRequest;
+
+import jakarta.servlet.http.HttpServletRequest;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.nimbusds.oauth2.sdk.http.HTTPResponse;
 import com.nimbusds.oauth2.sdk.AuthorizationCode;
@@ -54,50 +60,66 @@ import com.nimbusds.openid.connect.sdk.OIDCTokenResponseParser;
 import com.nimbusds.openid.connect.sdk.UserInfoResponse;
 import com.nimbusds.openid.connect.sdk.UserInfoRequest;
 import com.nimbusds.openid.connect.sdk.AuthenticationRequest;
-
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 
 public class OpenIdProvider {
-    private static final Logger LOGGER = LoggerFactory.getLogger(OpenIdProvider.class);
-
     private final Boolean force;
     private final ClientID clientId;
     private final ClientAuthentication clientAuth;
-    private URI callbackUrl;
-    private URI authUrl;
-    private URI tokenUrl;
-    private URI userInfoUrl;
-    private URI baseUrl;
+    private final URI callbackUrl;
+    private final URI authUrl;
+    private final URI tokenUrl;
+    private final URI userInfoUrl;
+    private final URI baseUrl;
     private final String adminGroup;
+    private final String allowGroup;
+    private final String groupsClaimName;
 
-    private LoginService loginService;
+    private final LoginService loginService;
 
     @Inject
-    public OpenIdProvider(Config config, LoginService loginService) {
+    public OpenIdProvider(Config config, LoginService loginService, HttpClient httpClient, ObjectMapper objectMapper)
+        throws InterruptedException, IOException, URISyntaxException {
+
         this.loginService = loginService;
 
         force = config.getBoolean(Keys.OPENID_FORCE);
-        clientId = new ClientID(config.getString(Keys.OPENID_CLIENTID));
-        clientAuth = new ClientSecretBasic(clientId, new Secret(config.getString(Keys.OPENID_CLIENTSECRET)));
+        clientId = new ClientID(config.getString(Keys.OPENID_CLIENT_ID));
+        clientAuth = new ClientSecretBasic(clientId, new Secret(config.getString(Keys.OPENID_CLIENT_SECRET)));
 
-        try {
-            callbackUrl = new URI(config.getString(Keys.WEB_URL, "") + "/api/session/openid/callback");
-            authUrl = new URI(config.getString(Keys.OPENID_AUTHURL, ""));
-            tokenUrl = new URI(config.getString(Keys.OPENID_TOKENURL, ""));
-            userInfoUrl = new URI(config.getString(Keys.OPENID_USERINFOURL, ""));
-            baseUrl = new URI(config.getString(Keys.WEB_URL, ""));
-        } catch (URISyntaxException error) {
-            LOGGER.error("Invalid URIs provided in OpenID configuration");
+        baseUrl = new URI(WebHelper.retrieveWebUrl(config));
+        callbackUrl = new URI(WebHelper.retrieveWebUrl(config) + "/api/session/openid/callback");
+
+        if (config.hasKey(Keys.OPENID_ISSUER_URL)) {
+            HttpRequest httpRequest = HttpRequest.newBuilder(
+                URI.create(config.getString(Keys.OPENID_ISSUER_URL) + "/.well-known/openid-configuration"))
+                .header("Accept", "application/json")
+                .build();
+
+            String httpResponse = httpClient.send(httpRequest, BodyHandlers.ofString()).body();
+
+            Map<String, Object> discoveryMap = objectMapper.readValue(httpResponse, new TypeReference<>() {
+            });
+
+            authUrl = new URI((String) discoveryMap.get("authorization_endpoint"));
+            tokenUrl = new URI((String) discoveryMap.get("token_endpoint"));
+            userInfoUrl = new URI((String) discoveryMap.get("userinfo_endpoint"));
+        } else {
+            authUrl = new URI(config.getString(Keys.OPENID_AUTH_URL));
+            tokenUrl = new URI(config.getString(Keys.OPENID_TOKEN_URL));
+            userInfoUrl = new URI(config.getString(Keys.OPENID_USERINFO_URL));
         }
 
-        adminGroup = config.getString(Keys.OPENID_ADMINGROUP);
+        adminGroup = config.getString(Keys.OPENID_ADMIN_GROUP);
+        allowGroup = config.getString(Keys.OPENID_ALLOW_GROUP);
+        groupsClaimName = config.getString(Keys.OPENID_GROUPS_CLAIM_NAME);
     }
 
     public URI createAuthUri() {
         Scope scope = new Scope("openid", "profile", "email");
 
         if (adminGroup != null) {
-            scope.add("groups");
+            scope.add(groupsClaimName);
         }
 
         AuthenticationRequest.Builder request = new AuthenticationRequest.Builder(
@@ -112,18 +134,18 @@ public class OpenIdProvider {
                 .toURI();
     }
 
-    private OIDCTokenResponse getToken(
-        AuthorizationCode code) throws IOException, ParseException, GeneralSecurityException {
-            AuthorizationGrant codeGrant = new AuthorizationCodeGrant(code, callbackUrl);
-            TokenRequest tokenRequest = new TokenRequest(tokenUrl, clientAuth, codeGrant);
+    private OIDCTokenResponse getToken(AuthorizationCode code)
+            throws IOException, ParseException, GeneralSecurityException {
+        AuthorizationGrant codeGrant = new AuthorizationCodeGrant(code, callbackUrl);
+        TokenRequest tokenRequest = new TokenRequest(tokenUrl, clientAuth, codeGrant);
 
-            HTTPResponse tokenResponse = tokenRequest.toHTTPRequest().send();
-            TokenResponse token = OIDCTokenResponseParser.parse(tokenResponse);
-            if (!token.indicatesSuccess()) {
-                throw new GeneralSecurityException("Unable to authenticate with the OpenID Connect provider.");
-            }
+        HTTPResponse tokenResponse = tokenRequest.toHTTPRequest().send();
+        TokenResponse token = OIDCTokenResponseParser.parse(tokenResponse);
+        if (!token.indicatesSuccess()) {
+            throw new GeneralSecurityException("Unable to authenticate with the OpenID Connect provider.");
+        }
 
-            return (OIDCTokenResponse) token.toSuccessResponse();
+        return (OIDCTokenResponse) token.toSuccessResponse();
     }
 
     private UserInfo getUserInfo(BearerAccessToken token) throws IOException, ParseException, GeneralSecurityException {
@@ -135,41 +157,46 @@ public class OpenIdProvider {
 
         if (!userInfoResponse.indicatesSuccess()) {
             throw new GeneralSecurityException(
-                "Failed to access OpenID Connect user info endpoint. Please contact your administrator.");
+                    "Failed to access OpenID Connect user info endpoint. Please contact your administrator.");
         }
 
         return userInfoResponse.toSuccessResponse().getUserInfo();
     }
 
-    public URI handleCallback(
-            URI requestUri, HttpServletRequest request
-        ) throws StorageException, ParseException, IOException, GeneralSecurityException {
-            AuthorizationResponse response = AuthorizationResponse.parse(requestUri);
+    public URI handleCallback(URI requestUri, HttpServletRequest request)
+            throws StorageException, ParseException, IOException, GeneralSecurityException {
 
-            if (!response.indicatesSuccess()) {
-                throw new GeneralSecurityException(response.toErrorResponse().getErrorObject().getDescription());
-            }
+        AuthorizationResponse response = AuthorizationResponse.parse(requestUri);
 
-            AuthorizationCode authCode = response.toSuccessResponse().getAuthorizationCode();
+        if (!response.indicatesSuccess()) {
+            throw new GeneralSecurityException(response.toErrorResponse().getErrorObject().getDescription());
+        }
 
-            if (authCode == null) {
-                throw new GeneralSecurityException("Malformed OpenID callback.");
-            }
+        AuthorizationCode authCode = response.toSuccessResponse().getAuthorizationCode();
 
-            OIDCTokenResponse tokens = getToken(authCode);
+        if (authCode == null) {
+            throw new GeneralSecurityException("Malformed OpenID callback.");
+        }
 
-            BearerAccessToken bearerToken = tokens.getOIDCTokens().getBearerAccessToken();
+        OIDCTokenResponse tokens = getToken(authCode);
 
-            UserInfo userInfo = getUserInfo(bearerToken);
+        BearerAccessToken bearerToken = tokens.getOIDCTokens().getBearerAccessToken();
 
-            Boolean administrator = adminGroup != null && userInfo.getStringListClaim("groups").contains(adminGroup);
+        UserInfo userInfo = getUserInfo(bearerToken);
 
-            User user = loginService.login(userInfo.getEmailAddress(), userInfo.getName(), administrator);
+        List<String> userGroups = userInfo.getStringListClaim(groupsClaimName);
+        boolean administrator = adminGroup != null && userGroups.contains(adminGroup);
 
-            request.getSession().setAttribute(SessionResource.USER_ID_KEY, user.getId());
-            LogAction.login(user.getId(), ServletHelper.retrieveRemoteAddress(request));
+        if (!(administrator || allowGroup == null || userGroups.contains(allowGroup))) {
+            throw new GeneralSecurityException("Your OpenID Groups do not permit access to Traccar.");
+        }
 
-            return baseUrl;
+        User user = loginService.login(
+                userInfo.getEmailAddress(), userInfo.getName(), administrator).getUser();
+
+        SessionHelper.userLogin(request, user, null);
+
+        return baseUrl.resolve("?openid=success");
     }
 
     public boolean getForce() {
