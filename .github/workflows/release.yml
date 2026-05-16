@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
           cache: gradle
       - run: ./gradlew build
       - run: git checkout ${{ github.ref_name }}
@@ -38,11 +38,11 @@ jobs:
           sudo apt-get install -y libgcc-s1:i386 libstdc++6:i386
           sudo apt-get install -y innoextract makeself wine32
       - run: |
-          JDK_VERSION="21.0.7+6"
-          JDK_BASE="https://github.com/adoptium/temurin21-binaries/releases/download/jdk-${JDK_VERSION}"
-          wget -q "$JDK_BASE/OpenJDK21U-jdk_x64_windows_hotspot_${JDK_VERSION/+/_}.zip"
-          wget -q "$JDK_BASE/OpenJDK21U-jdk_x64_linux_hotspot_${JDK_VERSION/+/_}.tar.gz"
-          wget -q "$JDK_BASE/OpenJDK21U-jdk_aarch64_linux_hotspot_${JDK_VERSION/+/_}.tar.gz"
+          JDK_API="https://api.adoptium.net/v3/binary/latest/25/ga"
+          wget -q --content-disposition --trust-server-names "$JDK_API/windows/x64/jdk/hotspot/normal/eclipse"
+          wget -q --content-disposition --trust-server-names "$JDK_API/linux/x64/jdk/hotspot/normal/eclipse"
+          wget -q --content-disposition --trust-server-names "$JDK_API/linux/aarch64/jdk/hotspot/normal/eclipse"
+          ls -l OpenJDK*
           wget -q http://files.jrsoftware.org/is/5/isetup-5.5.6.exe
           ./package.sh ${{ github.event.inputs.version }}
         working-directory: ./setup
