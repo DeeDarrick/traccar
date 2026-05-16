@@ -31,8 +31,7 @@ public class AttributeMap extends AbstractMap<String, Object> {
     private Object[] data = EMPTY;
     private int size;
 
-    public AttributeMap() {
-    }
+    public AttributeMap() {}
 
     public AttributeMap(Map<? extends String, ?> source) {
         if (source != null) {

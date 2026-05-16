@@ -63,8 +63,7 @@ public class ConnectionManager implements BroadcastInterface {
     private final boolean showUnknownDevices;
     private final boolean statusEventsEnabled;
 
-    private record UnknownEntry(String uniqueId, long timestamp) {
-    }
+    private record UnknownEntry(String uniqueId, long timestamp) {}
 
     private final Map<Long, DeviceSession> sessionsByDeviceId = new ConcurrentHashMap<>();
     private final Map<ConnectionKey, Map<String, DeviceSession>> sessionsByEndpoint = new ConcurrentHashMap<>();

@@ -23,8 +23,7 @@ import java.util.Date;
 
 public final class DateUtil {
 
-    private DateUtil() {
-    }
+    private DateUtil() {}
 
     private static final DateTimeFormatter LOCAL_DATE_TIME = DateTimeFormatter
             .ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());

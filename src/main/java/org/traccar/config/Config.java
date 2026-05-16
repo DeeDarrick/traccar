@@ -36,8 +36,7 @@ public class Config {
 
     private boolean useEnvironmentVariables;
 
-    public Config() {
-    }
+    public Config() {}
 
     @Inject
     public Config(@Named("configFile") String file) throws IOException {

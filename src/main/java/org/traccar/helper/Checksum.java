@@ -21,8 +21,7 @@ import java.util.Locale;
 
 public final class Checksum {
 
-    private Checksum() {
-    }
+    private Checksum() {}
 
     public static final Algorithm CRC8_EGTS = new Algorithm(8, 0x31, 0xFF, false, false, 0x00);
     public static final Algorithm CRC8_ROHC = new Algorithm(8, 0x07, 0xFF, true, true, 0x00);

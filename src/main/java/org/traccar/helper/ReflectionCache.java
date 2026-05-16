@@ -30,18 +30,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class ReflectionCache {
 
-    private ReflectionCache() {
-    }
+    private ReflectionCache() {}
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.publicLookup();
     private static final MethodType SETTER_TYPE = MethodType.methodType(void.class, Object.class, Object.class);
     private static final MethodType GETTER_TYPE = MethodType.methodType(Object.class, Object.class);
 
-    private record Key(Class<?> clazz, String type) {
-    }
+    private record Key(Class<?> clazz, String type) {}
 
-    public record PropertyMethod(Class<?> type, boolean queryIgnore, String lowerCaseName, MethodHandle handle) {
-    }
+    public record PropertyMethod(Class<?> type, boolean queryIgnore, String lowerCaseName, MethodHandle handle) {}
 
     private static final Map<Key, Map<String, PropertyMethod>> CACHE = new ConcurrentHashMap<>();
     private static final Map<Class<?>, Constructor<?>> CONSTRUCTORS = new ConcurrentHashMap<>();

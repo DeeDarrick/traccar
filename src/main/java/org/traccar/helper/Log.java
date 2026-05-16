@@ -48,8 +48,7 @@ import java.util.stream.Stream;
 
 public final class Log {
 
-    private Log() {
-    }
+    private Log() {}
 
     private static final String STACK_PACKAGE = "org.traccar";
     private static final int STACK_LIMIT = 4;
@@ -285,8 +284,7 @@ public final class Log {
                 if (totalSpace > 1_000_000_000) {
                     stores.add(new Pair<>(usableSpace, totalSpace));
                 }
-            } catch (IOException ignored) {
-            }
+            } catch (IOException ignored) {}
         }
         return stores.stream()
                 .sorted(Comparator.comparingDouble(p -> p.first() / (double) p.second()))

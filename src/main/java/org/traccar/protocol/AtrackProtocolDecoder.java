@@ -271,8 +271,7 @@ public class AtrackProtocolDecoder extends BaseProtocolDecoder {
                                 Unpooled.wrappedBuffer(DataConverter.parseHex(beaconValues[2])));
                     }
                 }
-                default -> {
-                }
+                default -> {}
             }
         }
 

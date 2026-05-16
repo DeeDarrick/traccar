@@ -19,8 +19,7 @@ import java.util.List;
 
 public final class Keys {
 
-    private Keys() {
-    }
+    private Keys() {}
 
     /**
      * Network interface for the protocol. If not specified, the server will bind to all interfaces.

@@ -266,7 +266,7 @@ public class CacheManager implements BroadcastInterface {
                         }
                     }
                 }
-                default -> { }
+                default -> {}
             }
 
             graph.updateObject(after);

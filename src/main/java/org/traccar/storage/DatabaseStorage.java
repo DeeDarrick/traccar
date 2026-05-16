@@ -285,7 +285,7 @@ public class DatabaseStorage extends Storage {
                     }
                 }
             }
-            default -> { }
+            default -> {}
         }
         return results;
     }

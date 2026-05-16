@@ -38,8 +38,7 @@ public class PositionBatchWriter {
 
     private static final Request INSERT_REQUEST = new Request(new Columns.Exclude("id"));
 
-    private record Entry(Position position, CompletableFuture<Long> future) {
-    }
+    private record Entry(Position position, CompletableFuture<Long> future) {}
 
     private final Storage storage;
     private final ConcurrentLinkedQueue<Entry> queue;

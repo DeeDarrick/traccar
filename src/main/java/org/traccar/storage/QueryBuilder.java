@@ -146,7 +146,7 @@ public final class QueryBuilder implements AutoCloseable {
             case Double doubleValue -> setDouble(index, doubleValue);
             case String stringValue -> setString(index, stringValue);
             case Date dateValue -> setDate(index, dateValue);
-            default -> { }
+            default -> {}
         }
     }
 
@@ -297,13 +297,11 @@ public final class QueryBuilder implements AutoCloseable {
             if (resultSet != null) {
                 try {
                     resultSet.close();
-                } catch (SQLException ignored) {
-                }
+                } catch (SQLException ignored) {}
             }
             try {
                 close();
-            } catch (SQLException ignored) {
-            }
+            } catch (SQLException ignored) {}
             throw e;
         }
     }

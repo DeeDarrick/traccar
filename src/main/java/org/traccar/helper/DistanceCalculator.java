@@ -20,8 +20,7 @@ import org.traccar.model.Position;
 
 public final class DistanceCalculator {
 
-    private DistanceCalculator() {
-    }
+    private DistanceCalculator() {}
 
     private static final double EQUATORIAL_EARTH_RADIUS = 6378137.0;
     private static final double DEG_TO_RAD = Math.PI / 180;

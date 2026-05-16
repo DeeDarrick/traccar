@@ -169,7 +169,7 @@ public abstract class BaseProtocolDecoder extends ExtendedObjectDecoder {
                     deviceIds.add(((Position) position).getDeviceId());
                 }
             }
-            case null, default -> { }
+            case null, default -> {}
         }
         if (deviceIds.isEmpty()) {
             DeviceSession deviceSession = getDeviceSession(channel, remoteAddress);

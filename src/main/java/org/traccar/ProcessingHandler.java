@@ -81,7 +81,7 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter implements B
     private final List<BaseEventHandler> eventHandlers;
     private final PostProcessHandler postProcessHandler;
 
-    private record QueuedPosition(ChannelHandlerContext ctx, Position position) { }
+    private record QueuedPosition(ChannelHandlerContext ctx, Position position) {}
 
     private final Map<Long, Queue<QueuedPosition>> queues = new HashMap<>();
 

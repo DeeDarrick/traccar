@@ -154,8 +154,7 @@ public class AplicomProtocolDecoder extends BaseProtocolDecoder {
                         case 0x14 -> position.set("electricHours", value.readIntLE() / 60 / 60);
                         case 0x17 -> position.set("serviceIndicator", value.readIntLE());
                         case 0x18 -> position.set("softwareVersion", value.readIntLE() / 100.0);
-                        default -> {
-                        }
+                        default -> {}
                     }
                 }
                 default -> LOGGER.warn("Aplicom CAN decoding error", new UnsupportedOperationException());

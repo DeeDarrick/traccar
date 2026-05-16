@@ -306,7 +306,6 @@ public class OsmAndProtocolDecoder extends BaseHttpProtocolDecoder {
     }
 
     @Override
-    protected void sendQueuedCommands(Channel channel, SocketAddress remoteAddress, long deviceId) {
-    }
+    protected void sendQueuedCommands(Channel channel, SocketAddress remoteAddress, long deviceId) {}
 
 }
