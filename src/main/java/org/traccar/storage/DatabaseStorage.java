@@ -254,6 +254,7 @@ public class DatabaseStorage extends Storage {
     private List<Object> getConditionVariables(Condition genericCondition) {
         List<Object> results = new ArrayList<>();
         switch (genericCondition) {
+            case null -> {}
             case Condition.Compare condition -> results.add(condition.getValue());
             case Condition.Between condition -> {
                 results.add(condition.getFromValue());
